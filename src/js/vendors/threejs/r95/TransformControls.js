@@ -621,8 +621,6 @@ TransformControls.prototype = Object.assign( Object.create( THREE.Object3D.proto
 
 const TransformControlsGizmo = function () {
 
-	'use strict';
-
 	THREE.Object3D.call( this );
 
 	this.type = 'TransformControlsGizmo';
@@ -1370,8 +1368,6 @@ TransformControlsGizmo.prototype = Object.assign( Object.create( THREE.Object3D.
 
 
 const TransformControlsPlane = function () {
-
-	'use strict';
 
 	THREE.Mesh.call( this,
 		new THREE.PlaneBufferGeometry( 100000, 100000, 2, 2 ),

@@ -1,25 +1,16 @@
 import React, { Component } from 'react';
-import editor from '../index';
 
 class CreateFloor extends Component {
 
-    constructor(){
-        super();
-        this.handleClick = this.handleClick.bind(this);
-    }
-
-    handleClick(e) {
-        e.preventDefault();
-        editor.extrude();
-        editor.clearFloor();
-        document.getElementsByClassName("points")[0].style.display = "none";
-        document.getElementById("create-floor").style.display = "none";
-    }
-
     render() {
-        return (
-            <button id={this.props.id} onClick={this.handleClick}>{this.props.children}</button>
-        );
+        const isVisible = this.props.showCreateFloorButton;
+        let buttons;
+        if (isVisible) {
+            buttons = <button id={this.props.id} onClick={ () => this.props.onClick('CREATE_FLOOR') }>{this.props.children}</button>
+        } else {
+            buttons = <div/>
+        }
+        return  buttons;
     }
 }
 
