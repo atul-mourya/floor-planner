@@ -3,9 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "clientjs": "^0.1.11",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
-    "react-scripts": "2.0.4"
+    "react-scripts": "2.0.4",
+    "stats.js": "^0.17.0",
+    "three": "^0.97.0",
+    "three-dragcontrols": "^0.88.2",
+    "three-map-controls": "^1.0.1",
+    "three-transform-controls": "^1.0.4"
   },
   "scripts": {
     "start": "react-scripts start",

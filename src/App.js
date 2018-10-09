@@ -1,28 +1,25 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { Component, Fragment } from 'react';
+import FloorPlanner from './components/FloorPlanner';
+import PointsButtons from './components/PointsButtons';
+import ClearFloor from './components/ClearFloor';
+import CreateFloor from './components/CreateFloor';
+import './css/main.css';
 
 class App extends Component {
-  render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
-      </div>
-    );
-  }
-}
 
+	render() {
+		return (
+			<Fragment>
+				<div id="editor"></div>
+				<FloorPlanner />
+				<PointsButtons />
+				<CreateFloor id="create-floor">Create Floor</CreateFloor>
+				<ClearFloor id="clear" >X</ClearFloor>
+			</Fragment>
+		);
+	}
+
+}
+	
 export default App;
+	
