@@ -5,49 +5,45 @@ import ClearFloor from './components/ClearFloor';
 import CreateFloor from './components/CreateFloor';
 import editor from './index';
 import './css/main.css';
+import { bindActionCreators } from "redux";
+import { connect } from 'react-redux';
+import { updateEditorUI } from './actions';
 
 class App extends Component {
 
-	constructor(){
+	constructor() {
 		super();
 		this.handleClick = this.handleClick.bind(this);
-		this.state = {
-			showPointButtons		: false,
-			showLayoutButtons 		: true,
-			showCreateFloorButton 	: false,
-			showClearButton 		: false
-		}
-	
 	}
-	
-	handleClick (e, context) {
+
+	handleClick(e, context) {
 		switch (e) {
 			case 'ADD_LAYOUT':
-				this.setState({
-					showClearButton			: true,
-					showCreateFloorButton	: true,
-					showPointButtons 		: context.shape === 'C' ? true : false,
-					showLayoutButtons		: false 
+				this.props.updateEditorUI({
+					showClearButton: true,
+					showCreateFloorButton: true,
+					showPointButtons: context.shape === 'C' ? true : false,
+					showLayoutButtons: false
 				});
-				editor.createFloor({shape: context.shape});
+				editor.createFloor({ shape: context.shape });
 				break;
 			case "CLEAR_LAYOUT":
 				editor.clearFloor();
-				this.setState({
-					showClearButton			: true,
-					showCreateFloorButton	: false,
-					showPointButtons 		: false,
-					showLayoutButtons		: true 
+				this.props.updateEditorUI({
+					showClearButton: true,
+					showCreateFloorButton: false,
+					showPointButtons: false,
+					showLayoutButtons: true
 				});
 				break;
 			case 'CREATE_FLOOR':
 				editor.extrude();
 				editor.clearFloor();
-				this.setState({
-					showClearButton			: false,
-					showCreateFloorButton	: false,
-					showPointButtons 		: false,
-					showLayoutButtons		: false 
+				this.props.updateEditorUI({
+					showClearButton: false,
+					showCreateFloorButton: false,
+					showPointButtons: false,
+					showLayoutButtons: false
 				});
 				break;
 			case 'ADD_POINT':
@@ -62,19 +58,35 @@ class App extends Component {
 		}
 	}
 
+	createEditorUI() {
+		return (<Fragment key={this.props.editorUI.id}>
+			<FloorPlanner showLayoutButtons={this.props.editorUI.showLayoutButtons} onClick={this.handleClick} />
+			<PointsButtons showPointButtons={this.props.editorUI.showPointButtons} onClick={this.handleClick} />
+			<CreateFloor showCreateFloorButton={this.props.editorUI.showCreateFloorButton} id="create-floor" onClick={this.handleClick}>Create Floor</CreateFloor>
+			<ClearFloor showClearButton={this.props.editorUI.showClearButton} id="clear" onClick={this.handleClick}>X</ClearFloor>
+		</Fragment>)
+	}
+
 	render() {
 		return (
 			<Fragment>
 				<div id="editor"></div>
-				<FloorPlanner  showLayoutButtons={ this.state.showLayoutButtons } onClick={ this.handleClick }/>
-				<PointsButtons  showPointButtons={ this.state.showPointButtons } onClick={ this.handleClick }/>
-				<CreateFloor showCreateFloorButton={ this.state.showCreateFloorButton } id="create-floor" onClick={ this.handleClick }>Create Floor</CreateFloor>
-				<ClearFloor showClearButton={ this.state.showClearButton } id="clear" onClick={ this.handleClick }>X</ClearFloor>
+				{this.createEditorUI()}
 			</Fragment>
 		);
 	}
 
 }
-	
-export default App;
-	
+
+function mapStateToProps(state) {
+	return {
+		editorUI: state.editorUI
+	};
+}
+
+function matchDispatchToProps(dispatch) {
+	return bindActionCreators({ updateEditorUI: updateEditorUI }, dispatch)
+}
+
+
+export default connect(mapStateToProps, matchDispatchToProps)(App);
