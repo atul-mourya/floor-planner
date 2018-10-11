@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import DragControls from 'three-dragcontrols';
 import MapControls from '../vendors/threejs/r95/MapControls';
 import TransformControls from '../vendors/threejs/r95/TransformControls';
+import OrbitControls from "../vendors/threejs/r95/OrbitControls";
 import ScriptLoader from './ScriptLoader';
 import Stats from 'stats.js'
 import THREEx from '../vendors/threex/threex.rendererstats'
@@ -63,7 +64,8 @@ var AbstractSKEditor = function ( data, loadingManager, scripts, onReady ) {
 		rendererGammaInput: true,
 		rendererGammaOutput: true,
         enableShadow: false,
-        floorTextureImage: 'images/default_floor.jpg'
+        floorTextureImage: 'images/default_floor.jpg',
+        wallTextureImage: 'images/wall-white-paint.jpg'
 	};
 
 	var tracker = {
@@ -162,6 +164,17 @@ var AbstractSKEditor = function ( data, loadingManager, scripts, onReady ) {
 
     }
 
+	function _initOrbitControls() {
+		var orbitControls = new OrbitControls( _this.camera, _global.renderer.domElement );		orbitControls.addEventListener( 'change', _refreshRenderFrame ); // call this only in static scenes (i.e., if there is no animation loop)
+		orbitControls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+		orbitControls.dampingFactor = 0.25;
+		orbitControls.minDistance = 0;
+		orbitControls.maxDistance = 500;
+		orbitControls.maxPolarAngle = THREE.Math.degToRad(90);
+        orbitControls.minPolarAngle = THREE.Math.degToRad(0 );
+		_global.orbitControls = orbitControls;
+	}
+
 	function _initMapControls() {
 
 		var controls = new MapControls( _this.camera, _global.renderer.domElement );
@@ -169,10 +182,9 @@ var AbstractSKEditor = function ( data, loadingManager, scripts, onReady ) {
 		controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
 		controls.dampingFactor = 0.25;
 		controls.screenSpacePanning = true;
-		controls.minDistance = 100;
+		// controls.minDistance = 100;
 		controls.maxDistance = 500;
 		controls.panSpeed = 0.25;
-		controls.maxPolarAngle = Math.PI / 2;
 		_global.controls = controls;
 
 	}
@@ -242,7 +254,7 @@ var AbstractSKEditor = function ( data, loadingManager, scripts, onReady ) {
 		ambLight.name = "ambientLight";
 		helpers.add( ambLight );
 
-		var dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
+		var dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
 		dirLight.name = "dirLight";
 		dirLight.position.set( 5, 5, 5 );
 		helpers.add( dirLight );
@@ -254,9 +266,24 @@ var AbstractSKEditor = function ( data, loadingManager, scripts, onReady ) {
 
 		helpers.add( _global.transformControl );
 
-        new THREE.TextureLoader().load(_this.setting.floorTextureImage, function(texture){ 
-            _global.floorTexture = texture;
-         });
+		_global.helpers = helpers;
+
+        new THREE.TextureLoader().load(_this.setting.floorTextureImage, function(texture){
+			texture.wrapS = THREE.RepeatWrapping;
+			texture.wrapT = THREE.RepeatWrapping;
+			texture.repeat.x = 0.1;
+			texture.repeat.y = 0.1;
+			_global.floorTexture = texture;
+
+		});
+		 
+		new THREE.TextureLoader().load(_this.setting.wallTextureImage, function(texture){ 
+			texture.wrapS = THREE.RepeatWrapping;
+			texture.wrapT = THREE.RepeatWrapping;
+			texture.repeat.x = 0.1;
+			texture.repeat.y = 0.1;
+            _global.wallTexture = texture;
+        });
 
 		_this.scene.add( helpers );
 		_this.sceneReady = true;
@@ -299,7 +326,8 @@ var AbstractSKEditor = function ( data, loadingManager, scripts, onReady ) {
 				console.log( 'Unidentified shape selected' );
 				break;
 
-        }
+		}
+
 		_refreshRenderFrame();
 
     };
@@ -432,15 +460,11 @@ var AbstractSKEditor = function ( data, loadingManager, scripts, onReady ) {
 	function _createCurveGeometry( positions, splinePointsLength ) {
 
 		for ( var i = 0; i < splinePointsLength; i ++ ) {
-
+			
 			addSplineObject( positions[i] );
-
-        }
-		for ( var i = 0; i < splinePointsLength; i ++ ) {
-
 			_global.positions.push( _global.splineHelperObjects[ i ].position );
 
-        }
+		}
 
 		var geometry = new THREE.BufferGeometry();
 		geometry.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array( _global.ARC_SEGMENTS * 3 ), 3 ) );
@@ -467,30 +491,37 @@ var AbstractSKEditor = function ( data, loadingManager, scripts, onReady ) {
 	this.extrude = function name( params ) {
 
 		var extrudeSettings = {
-			depth: 16,
+			depth: 30,
             bevelEnabled: false,
 		};
 
 		var pts = [];
 
 		for ( var i = 0; i < _global.positions.length; i ++ ) {
-
+ 
 			pts.push( new THREE.Vector2( _global.positions[ i ].x, _global.positions[ i ].y ) );
 
         }
-        
-        _global.floorTexture.wrapS = THREE.RepeatWrapping;
-        _global.floorTexture.wrapT = THREE.RepeatWrapping;
-        _global.floorTexture.repeat.x = 0.1;
-        _global.floorTexture.repeat.y = 0.1;
-        _global.floorTexture.needsUpdate = true;
 
 		var shape = new THREE.Shape( pts );
+
 		var geometry = new THREE.ExtrudeGeometry( shape, extrudeSettings );
+		geometry.computeBoundingSphere();
+
 		var material1 = new THREE.MeshLambertMaterial( { color: 0xffffff, wireframe: false, side: THREE.BackSide, map: _global.floorTexture } );
-		var material2 = new THREE.MeshLambertMaterial( { color: 0x3472ff, wireframe: false, side: THREE.DoubleSide } );
+		var material2 = new THREE.MeshLambertMaterial( { color: 0xffffff, wireframe: false, side: THREE.BackSide, map: _global.wallTexture} );
+		
 		var mesh = new THREE.Mesh( geometry, [ material1, material2 ] );
-        _global.floor3d.add( mesh );
+		mesh.frustumCulled = false;
+		mesh.position.copy(geometry.boundingSphere.center.negate());
+
+		_global.floor3d.add( mesh );
+		
+		_this.scene.rotateX(-Math.PI/2);
+		_global.helpers.getObjectByName('grid').visible = false;
+		_global.controls.enabled = false;
+		_global.controls.dispose();
+		_initOrbitControls();
 
         _refreshRenderFrame();
 
@@ -540,6 +571,7 @@ var AbstractSKEditor = function ( data, loadingManager, scripts, onReady ) {
 		object.castShadow = true;
 		object.receiveShadow = true;
 		_global.floor2d.add( object );
+		
 		_global.splineHelperObjects.push( object );
 		return object;
 
@@ -585,7 +617,17 @@ var AbstractSKEditor = function ( data, loadingManager, scripts, onReady ) {
             }
 			position.needsUpdate = true;
 
-        }
+		}
+		
+		var len = _global.positions.length;
+
+		for ( var j = 0; j < len; j++ ){
+
+			var current = _global.positions[j];
+			var previous = _global.positions[(j+len-1)%len];
+			console.log("Line : " + j + " = " + current.distanceTo(previous));
+
+		}
 
     }
 
